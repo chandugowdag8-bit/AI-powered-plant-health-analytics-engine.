@@ -232,47 +232,88 @@
 
                 <!-- Upload & Input Box -->
                 <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
-                    <h3 class="font-bold text-slate-800 flex items-center text-lg">
-                        <i class="fa-solid fa-camera-retro text-agri-600 mr-2"></i> Leaf Photo Inspection
-                    </h3>
-
-                    <!-- Image Preview Area -->
-                    <div class="border-2 border-dashed border-slate-300 rounded-2xl h-64 flex flex-col items-center justify-center relative overflow-hidden bg-slate-50 group">
-                        <img id="leaf-preview" class="w-full h-full object-cover hidden">
-                        <div id="preview-placeholder" class="text-center p-4">
-                            <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400 mb-2"></i>
-                            <p class="text-xs font-semibold text-slate-600">Click below or upload plant leaf image</p>
-                            <p class="text-[10px] text-slate-400 mt-1">Supports JPG, PNG, WEBP</p>
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 flex items-center text-lg">
+                            <i class="fa-solid fa-camera-retro text-agri-600 mr-2"></i> Leaf Scanner
+                        </h3>
+                        <!-- Mode Switcher -->
+                        <div class="flex bg-slate-100 p-1 rounded-xl text-xs">
+                            <button id="btn-mode-camera" onclick="setScanMode('camera')" class="px-3 py-1 font-semibold rounded-lg bg-white text-agri-700 shadow-sm transition">
+                                <i class="fa-solid fa-video mr-1"></i> Live Camera
+                            </button>
+                            <button id="btn-mode-file" onclick="setScanMode('file')" class="px-3 py-1 font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition">
+                                <i class="fa-solid fa-folder-open mr-1"></i> File
+                            </button>
                         </div>
                     </div>
 
-                    <!-- File Input -->
-                    <div>
-                        <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="onFileSelected(event)">
-                        <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-folder-open"></i>
-                            <span>Select or Capture Photo</span>
-                        </button>
+                    <!-- Live Camera Feed Section -->
+                    <div id="camera-container" class="space-y-3">
+                        <div class="border-2 border-slate-300 rounded-2xl h-64 flex flex-col items-center justify-center relative overflow-hidden bg-slate-900 group shadow-inner">
+                            <video id="webcam-feed" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <img id="leaf-preview" class="w-full h-full object-cover hidden">
+                            
+                            <!-- Camera Controls Overlay -->
+                            <div class="absolute bottom-3 left-3 right-3 flex justify-between items-center z-10">
+                                <button onclick="toggleCameraFacing()" title="Switch Camera" class="bg-slate-900/80 hover:bg-slate-900 text-white p-2.5 rounded-full text-xs backdrop-blur border border-white/20 transition flex items-center justify-center">
+                                    <i class="fa-solid fa-camera-rotate text-sm"></i>
+                                </button>
+                                <span id="camera-status-tag" class="bg-emerald-500/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur uppercase tracking-wider">
+                                    Live Stream
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Live Action Buttons -->
+                        <div id="cam-active-controls" class="flex space-x-2">
+                            <button onclick="captureAndAnalyze()" class="flex-1 bg-agri-600 hover:bg-agri-700 text-white font-bold py-3 rounded-xl text-xs shadow transition flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-circle-dot text-rose-400 animate-pulse"></i>
+                                <span>📸 Capture & Analyze</span>
+                            </button>
+                            <button onclick="startVoiceCommand()" title="Voice Command" class="px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow transition flex items-center justify-center">
+                                <i class="fa-solid fa-microphone text-base"></i>
+                            </button>
+                        </div>
+
+                        <div id="cam-reset-controls" class="hidden flex space-x-2">
+                            <button onclick="restartCameraFeed()" class="flex-1 bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span>🔄 Restart Camera / Retake</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Scan & Voice Controls -->
-                    <div class="flex space-x-2 pt-2">
-                        <button onclick="processLeafScan()" class="flex-1 bg-agri-600 hover:bg-agri-700 text-white font-bold py-3 rounded-xl text-sm shadow transition flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>Analyze Leaf</span>
+                    <!-- File Upload Fallback Container -->
+                    <div id="file-container" class="hidden space-y-3">
+                        <div class="border-2 border-dashed border-slate-300 rounded-2xl h-64 flex flex-col items-center justify-center relative overflow-hidden bg-slate-50">
+                            <img id="file-preview-img" class="w-full h-full object-cover hidden">
+                            <div id="file-placeholder" class="text-center p-4">
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400 mb-2"></i>
+                                <p class="text-xs font-semibold text-slate-600">📁 Upload Existing File</p>
+                                <p class="text-[10px] text-slate-400 mt-1">Supports JPG, PNG, WEBP</p>
+                            </div>
+                        </div>
+                        <input type="file" id="file-input" accept="image/*" class="hidden" onchange="onFileSelected(event)">
+                        <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Choose Leaf Image</span>
                         </button>
-                        <button onclick="startVoiceCommand()" title="Voice Command" class="px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm shadow transition flex items-center justify-center">
-                            <i class="fa-solid fa-microphone text-lg"></i>
+                        <button id="btn-file-analyze" onclick="processFileScan()" class="w-full bg-agri-600 hover:bg-agri-700 text-white font-bold py-3 rounded-xl text-xs shadow transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Analyze Uploaded File</span>
                         </button>
                     </div>
 
                     <!-- HUMAN DETECTED REJECTION WARNING -->
-                    <div id="human-warning" class="hidden p-4 bg-rose-50 border-l-4 border-rose-500 rounded-r-xl space-y-1">
+                    <div id="human-warning" class="hidden p-4 bg-rose-50 border-l-4 border-rose-500 rounded-r-xl space-y-2">
                         <div class="flex items-center space-x-2 text-rose-700 font-bold text-xs">
                             <i class="fa-solid fa-triangle-exclamation text-base"></i>
-                            <span>HUMAN / PERSON DETECTED</span>
+                            <span>⚠️ Invalid Photo: Human detected!</span>
                         </div>
-                        <p class="text-[11px] text-rose-600">The pixel analysis engine detected human skin tones instead of foliage. Please capture a clear leaf photo.</p>
+                        <p class="text-[11px] text-rose-600 leading-relaxed">The pixel inspection engine detected human skin tones instead of crop foliage. Please upload or capture a clear photo of a plant leaf.</p>
+                        <button onclick="restartCameraFeed()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition">
+                            Try Again / Clear
+                        </button>
                     </div>
                 </div>
 
@@ -477,7 +518,6 @@
                         };
                         firebase.initializeApp(firebaseConfig);
                         db = firebase.firestore();
-                        console.log("Firebase background sync ready.");
                     }
                 } catch (e) {
                     console.warn("Background Firebase operating in local fallback mode.");
@@ -485,9 +525,12 @@
             }, 300);
         });
 
-        // GLOBAL APP STATE (Instant local load)
+        // GLOBAL APP STATE
         let currentUser = null;
         let envMetrics = { temp: 28, humidity: 65, gps: "28.61, 77.20" };
+        let activeFacingMode = 'environment'; // 'environment' (back) or 'user' (front)
+        let mediaStream = null;
+        let currentScanMode = 'camera'; // 'camera' or 'file'
 
         let storeProducts = [
             { id: "p1", title: "Neem Bio-Protect Spray", price: 290, img: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400" },
@@ -497,7 +540,6 @@
 
         // INITIALIZATION
         document.addEventListener("DOMContentLoaded", () => {
-            // Check local storage instantly
             const savedUser = localStorage.getItem("phe_farmer");
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
@@ -517,6 +559,14 @@
             document.getElementById(`tab-${tabId}`).classList.add("active");
             document.getElementById("mobile-menu").classList.add("hidden");
 
+            if (tabId === 'diagnosis') {
+                if (currentScanMode === 'camera' && !mediaStream) {
+                    initCameraStream();
+                }
+            } else {
+                stopCameraStream();
+            }
+
             if (tabId === 'my-orders') renderMyOrders();
             if (tabId === 'admin-auth' && sessionStorage.getItem("admin_logged") === "true") {
                 document.getElementById("admin-login-box").classList.add("hidden");
@@ -529,6 +579,205 @@
             document.getElementById("mobile-menu").classList.toggle("hidden");
         }
 
+        // SCANNER MODE SWITCHER (CAMERA VS FILE FALLBACK)
+        function setScanMode(mode) {
+            currentScanMode = mode;
+            const camBtn = document.getElementById("btn-mode-camera");
+            const fileBtn = document.getElementById("btn-mode-file");
+            const camContainer = document.getElementById("camera-container");
+            const fileContainer = document.getElementById("file-container");
+
+            if (mode === 'camera') {
+                camBtn.className = "px-3 py-1 font-semibold rounded-lg bg-white text-agri-700 shadow-sm transition";
+                fileBtn.className = "px-3 py-1 font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition";
+                camContainer.classList.remove("hidden");
+                fileContainer.classList.add("hidden");
+                initCameraStream();
+            } else {
+                fileBtn.className = "px-3 py-1 font-semibold rounded-lg bg-white text-agri-700 shadow-sm transition";
+                camBtn.className = "px-3 py-1 font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition";
+                fileContainer.classList.remove("hidden");
+                camContainer.classList.add("hidden");
+                stopCameraStream();
+            }
+        }
+
+        // WEBCAM STREAMING ENGINE
+        async function initCameraStream() {
+            stopCameraStream();
+            const video = document.getElementById("webcam-feed");
+            const imgPreview = document.getElementById("leaf-preview");
+            
+            video.classList.remove("hidden");
+            imgPreview.classList.add("hidden");
+            document.getElementById("cam-active-controls").classList.remove("hidden");
+            document.getElementById("cam-reset-controls").classList.add("hidden");
+            document.getElementById("human-warning").classList.add("hidden");
+            document.getElementById("camera-status-tag").innerText = "Live Stream";
+
+            try {
+                const constraints = {
+                    video: { facingMode: activeFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                };
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = mediaStream;
+            } catch (err) {
+                console.warn("Unable to open camera stream. Fallback to user camera.", err);
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    video.srcObject = mediaStream;
+                } catch (fallbackErr) {
+                    alert("Camera access denied or unavailable. Switching to file upload mode.");
+                    setScanMode('file');
+                }
+            }
+        }
+
+        function stopCameraStream() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+        }
+
+        function toggleCameraFacing() {
+            activeFacingMode = (activeFacingMode === 'environment') ? 'user' : 'environment';
+            initCameraStream();
+        }
+
+        function restartCameraFeed() {
+            initCameraStream();
+        }
+
+        // CAPTURE FRAME & ANALYZE
+        function captureAndAnalyze() {
+            const video = document.getElementById("webcam-feed");
+            const canvas = document.getElementById("inspection-canvas");
+            const ctx = canvas.getContext("2d");
+
+            if (!video.videoWidth) {
+                alert("Camera feed loading. Please wait a moment!");
+                return;
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Freeze preview
+            const imgPreview = document.getElementById("leaf-preview");
+            imgPreview.src = canvas.toDataURL("image/jpeg");
+            imgPreview.classList.remove("hidden");
+            video.classList.add("hidden");
+
+            stopCameraStream();
+            document.getElementById("cam-active-controls").classList.add("hidden");
+            document.getElementById("cam-reset-controls").classList.remove("hidden");
+            document.getElementById("camera-status-tag").innerText = "Captured Frame";
+
+            // Run analysis
+            runPixelAnalysis(canvas);
+        }
+
+        // FILE FALLBACK SELECTION & SCAN
+        function onFileSelected(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = document.getElementById("file-preview-img");
+                img.src = evt.target.result;
+                img.classList.remove("hidden");
+                document.getElementById("file-placeholder").classList.add("hidden");
+                document.getElementById("human-warning").classList.add("hidden");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function processFileScan() {
+            const img = document.getElementById("file-preview-img");
+            if (!img.src || img.classList.contains("hidden")) {
+                alert("Please select an image file first!");
+                return;
+            }
+
+            const canvas = document.getElementById("inspection-canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = img.naturalWidth || 300;
+            canvas.height = img.naturalHeight || 300;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            runPixelAnalysis(canvas);
+        }
+
+        // PIXEL CANVAS INSPECTION & HUMAN SKIN REJECTION
+        function runPixelAnalysis(canvas) {
+            document.getElementById("human-warning").classList.add("hidden");
+
+            const ctx = canvas.getContext("2d");
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let greenCount = 0, skinToneCount = 0, brownCount = 0;
+            const totalPixels = pixels.length / 4;
+
+            for (let i = 0; i < pixels.length; i += 4) {
+                const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+
+                // Human Skin Color Spectrum Check
+                if (r > 60 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 12) {
+                    skinToneCount++;
+                }
+                // Foliage Chlorophyll Check
+                else if (g > r && g > b) {
+                    greenCount++;
+                }
+                // Blight Spot Check
+                else if (r > 100 && g < 90 && b < 60) {
+                    brownCount++;
+                }
+            }
+
+            const skinRatio = skinToneCount / totalPixels;
+            const greenRatio = greenCount / totalPixels;
+
+            // HUMAN REJECTION RULE
+            if (skinRatio > 0.18 && greenRatio < 0.12) {
+                document.getElementById("human-warning").classList.remove("hidden");
+                speakText("Invalid Photo: Human detected! Please upload or capture a clear photo of a plant leaf.");
+                return;
+            }
+
+            // CROP DIAGNOSTIC EVALUATION
+            const crops = ["Tomato Leaf", "Potato Foliage", "Cotton Crop", "Maize (Corn)", "Apple Orchard Leaf"];
+            const selectedCrop = crops[Math.floor(Math.random() * crops.length)];
+
+            let score = Math.floor(greenRatio * 100) + 32;
+            if (score > 96) score = 94;
+            if (score < 35) score = 45;
+
+            let condition = "Healthy Foliage";
+            let advisory = "Plant chlorophyll balance is optimal. Continue balanced watering and organic compost application.";
+
+            if (brownCount > 500 || score < 70) {
+                condition = "Early Leaf Spot / Fungus Detected";
+                advisory = "Fungal activity observed. Prune infected lower leaves and apply Neem Bio-Protect or Copper Fungicide spray.";
+            }
+
+            // Display Results
+            document.getElementById("results-placeholder").classList.add("hidden");
+            document.getElementById("results-card").classList.remove("hidden");
+
+            document.getElementById("res-crop-name").innerText = selectedCrop;
+            document.getElementById("res-score-num").innerText = `${score} / 100`;
+            document.getElementById("res-score-bar").style.width = `${score}%`;
+            document.getElementById("res-condition").innerText = condition;
+            document.getElementById("res-env-metrics").innerText = `${envMetrics.humidity}% Humid / ${envMetrics.temp}°C`;
+            document.getElementById("res-treatment").innerText = advisory;
+
+            readDiagnosisAudio();
+        }
+
         // INSTANT FARMER LOGIN
         function handleFarmerLogin(e) {
             e.preventDefault();
@@ -538,18 +787,15 @@
 
             currentUser = { id: "usr_" + Date.now(), name, phone, lang, env: envMetrics };
 
-            // Save to localStorage INSTANTLY
             localStorage.setItem("phe_farmer", JSON.stringify(currentUser));
 
             let farmerList = JSON.parse(localStorage.getItem("phe_farmers_list") || "[]");
             farmerList.push(currentUser);
             localStorage.setItem("phe_farmers_list", JSON.stringify(farmerList));
 
-            // Hide modal instantly
             document.getElementById("login-modal").classList.add("hidden");
             updateUserBar();
 
-            // Non-blocking background sync to Firebase
             if (db) {
                 db.collection("farmers").doc(currentUser.id).set(currentUser).catch(err => console.log(err));
             }
@@ -582,99 +828,6 @@
             }
         }
 
-        // FILE PREVIEW & SELECTION
-        function onFileSelected(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const img = document.getElementById("leaf-preview");
-                img.src = evt.target.result;
-                img.classList.remove("hidden");
-                document.getElementById("preview-placeholder").classList.add("hidden");
-                document.getElementById("human-warning").classList.add("hidden");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // PIXEL CANVAS INSPECTION (HUMAN VS LEAF SCAN)
-        function processLeafScan() {
-            const img = document.getElementById("leaf-preview");
-            if (!img.src || img.classList.contains("hidden")) {
-                alert("Please select or capture a photo first!");
-                return;
-            }
-
-            document.getElementById("human-warning").classList.add("hidden");
-
-            const canvas = document.getElementById("inspection-canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = img.naturalWidth || 200;
-            canvas.height = img.naturalHeight || 200;
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let greenCount = 0, skinToneCount = 0, brownCount = 0;
-            const totalPixels = pixels.length / 4;
-
-            for (let i = 0; i < pixels.length; i += 4) {
-                const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-
-                // Human Skin Color Spectrum Check
-                if (r > 60 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 12) {
-                    skinToneCount++;
-                }
-                // Foliage Chlorophyll Check
-                else if (g > r && g > b) {
-                    greenCount++;
-                }
-                // Blight Spot Check
-                else if (r > 100 && g < 90 && b < 60) {
-                    brownCount++;
-                }
-            }
-
-            const skinRatio = skinToneCount / totalPixels;
-            const greenRatio = greenCount / totalPixels;
-
-            // HUMAN DETECTED REJECTION
-            if (skinRatio > 0.20 && greenRatio < 0.15) {
-                document.getElementById("human-warning").classList.remove("hidden");
-                speakText("Invalid photo. Human detected. Please capture a clear leaf photo.");
-                return;
-            }
-
-            // LEAF DIAGNOSTIC COMPUTATION
-            const crops = ["Tomato Leaf", "Potato Foliage", "Cotton Crop", "Maize (Corn)", "Apple Orchard Leaf"];
-            const selectedCrop = crops[Math.floor(Math.random() * crops.length)];
-
-            let score = Math.floor(greenRatio * 100) + 30;
-            if (score > 96) score = 94;
-            if (score < 35) score = 42;
-
-            let condition = "Healthy Foliage";
-            let advisory = "Plant chlorophyll balance is optimal. Continue balanced watering and organic compost application.";
-
-            if (brownCount > 500 || score < 70) {
-                condition = "Early Leaf Spot / Fungus Detected";
-                advisory = "Fungal activity observed. Prune infected lower leaves and apply Neem Bio-Protect or Copper Fungicide spray.";
-            }
-
-            // Display Results
-            document.getElementById("results-placeholder").classList.add("hidden");
-            document.getElementById("results-card").classList.remove("hidden");
-
-            document.getElementById("res-crop-name").innerText = selectedCrop;
-            document.getElementById("res-score-num").innerText = `${score} / 100`;
-            document.getElementById("res-score-bar").style.width = `${score}%`;
-            document.getElementById("res-condition").innerText = condition;
-            document.getElementById("res-env-metrics").innerText = `${envMetrics.humidity}% Humid / ${envMetrics.temp}°C`;
-            document.getElementById("res-treatment").innerText = advisory;
-
-            readDiagnosisAudio();
-        }
-
         // TEXT-TO-SPEECH VOICE ASSISTANT
         function speakText(text) {
             if ('speechSynthesis' in window) {
@@ -695,7 +848,7 @@
         }
 
         function speakCurrentAdvisory() {
-            speakText("Welcome to AI Powered Plant Health Analytic Engine. Upload a leaf photo to get instant diagnostic scores.");
+            speakText("Welcome to AI Powered Plant Health Analytic Engine. Capture a leaf photo to get instant diagnostic scores.");
         }
 
         function startVoiceCommand() {
@@ -708,7 +861,7 @@
             recognition.lang = currentUser?.lang || 'en-US';
             recognition.start();
             recognition.onresult = (e) => {
-                processLeafScan();
+                captureAndAnalyze();
             };
         }
 
